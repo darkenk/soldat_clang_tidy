@@ -1,0 +1,1 @@
+add_subdirectory(soldat_ifdef_replacer)
