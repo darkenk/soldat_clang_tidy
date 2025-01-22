@@ -1,0 +1,15 @@
+---
+Checks:          'clang-diagnostic-*,clang-analyzer-*,-*,readability-*,portability-*,modernize-*,bugprone-*,-readability-identifier-length,-readability-uppercase-literal-suffix,-readability-avoid-unconditional-preprocessor-if,-readability-magic-numbers,-readability-function-cognitive-complexity,-bugprone-narrowing-conversions,-bugprone-easily-swappable-parameters,-bugprone-switch-missing-default-case,-bugprone-integer-division,-modernize-avoid-c-arrays,-modernize-use-trailing-return-type,-misc-definitions-in-headers,misc-reduntant-expression,misc-use-internal-linkage'
+WarningsAsErrors: ''
+HeaderFileExtensions:
+  - ''
+  - h
+  - hh
+  - hpp
+  - hxx
+ImplementationFileExtensions:
+  - c
+  - cc
+  - cpp
+  - cxx
+FormatStyle: Microsoft
