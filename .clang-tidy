@@ -13,3 +13,15 @@ ImplementationFileExtensions:
   - cpp
   - cxx
 FormatStyle: Microsoft
+
+CheckOptions:
+  readability-identifier-naming.GlobalVariableCase: 'CamelCase'
+  readability-identifier-naming.GlobalVariablePrefix: 'g'
+  readability-identifier-naming.GlobalConstantCase: 'CamelCase'
+  readability-identifier-naming.GlobalConstantPrefix: 'k'
+  readability-identifier-naming.ConstantCase: 'CamelCase'
+  readability-identifier-naming.ConstantPrefix: 'k'
+  readability-identifier-naming.LocalVariableCase: 'lower_case'
+  readability-identifier-naming.LocalVariableIngoredRegexp: '\w{1,2}'
+  readability-identifier-naming.MemberCase: 'CamelCase'
+  readability-identifier-naming.MemberPrefix: 'm'

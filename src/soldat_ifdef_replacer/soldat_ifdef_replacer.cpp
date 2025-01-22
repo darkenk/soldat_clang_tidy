@@ -15,16 +15,16 @@ using namespace clang::ast_matchers;
 
 struct IfdefLocation
 {
-  SourceLocation Start;
-  SourceLocation Else;
-  SourceLocation End;
-  SourceLocation MacroEnd;
-  bool isIfndef;
+  SourceLocation mStart;
+  SourceLocation mElse;
+  SourceLocation mEnd;
+  SourceLocation mMacroEnd;
+  bool mIsIfndef;
 };
 
 struct IfdefPasser
 {
-  std::vector<IfdefLocation> &IfdefLocations;
+  std::vector<IfdefLocation> &mIfdefLocations;
 };
 
 namespace
@@ -35,21 +35,21 @@ SourceLocation GetHashLoc(SourceLocation Loc) { return Loc.getLocWithOffset(-1);
 AST_MATCHER_P(FunctionDecl, hasIfdefs, IfdefPasser, Locations)
 {
 
-  SourceRange Range = Node.getSourceRange();
+  SourceRange range = Node.getSourceRange();
 
-  auto inRange = std::ranges::any_of(Locations.IfdefLocations, [&](const auto &Ifdef) {
-    return Range.fullyContains(SourceRange(Ifdef.Start, Ifdef.End));
+  auto in_range = std::ranges::any_of(Locations.mIfdefLocations, [&](const auto &Ifdef) {
+    return range.fullyContains(SourceRange(Ifdef.mStart, Ifdef.mEnd));
   });
 
-  static constexpr auto debug = false;
-  if constexpr (debug)
+  static constexpr auto kDebug = false;
+  if constexpr (kDebug)
   {
-    const SourceManager &SM = Finder->getASTContext().getSourceManager();
-    llvm::errs() << "FunctionDecl SourceRange: " << Range.getBegin().printToString(SM) << " - "
-                 << Range.getEnd().printToString(SM) << " hasIfdefs "
-                 << (inRange ? "SUCCESS" : "FAIL") << "\n";
+    const SourceManager &sm = Finder->getASTContext().getSourceManager();
+    llvm::errs() << "FunctionDecl SourceRange: " << range.getBegin().printToString(sm) << " - "
+                 << range.getEnd().printToString(sm) << " hasIfdefs "
+                 << (in_range ? "SUCCESS" : "FAIL") << "\n";
   }
-  return inRange;
+  return in_range;
 }
 } // namespace
 
@@ -58,159 +58,160 @@ class IfdefPPCallbacks : public PPCallbacks
 public:
   IfdefPPCallbacks(ClangTidyCheck &Check, const SourceManager &SM,
                    std::vector<IfdefLocation> &IfdefLocations)
-    : Check(Check), SM(SM), IfdefLocations(IfdefLocations)
+    : mCheck(Check), mSm(SM), mIfdefLocations(IfdefLocations)
   {
   }
 
   void If(SourceLocation Loc, SourceRange ConditionRange,
           ConditionValueKind ConditionValue) override
   {
-    DirectiveStack.emplace_back();
+    mDirectiveStack.emplace_back();
   }
 
   void Ifdef(SourceLocation Loc, const Token &MacroNameTok, const MacroDefinition &MD) override
   {
-    std::string MacroName = MacroNameTok.getIdentifierInfo()->getName().str();
-    DirectiveStack.emplace_back();
-    if (MacroName == "SERVER")
+    std::string macro_name = MacroNameTok.getIdentifierInfo()->getName().str();
+    mDirectiveStack.emplace_back();
+    if (macro_name == "SERVER")
     {
-      DirectiveStack.back().Loc = Loc;
-      DirectiveStack.back().MacroEndLoc = MacroNameTok.getEndLoc();
+      mDirectiveStack.back().mLoc = Loc;
+      mDirectiveStack.back().mMacroEndLoc = MacroNameTok.getEndLoc();
     }
   }
 
   void Ifndef(SourceLocation Loc, const Token &MacroNameTok, const MacroDefinition &MD) override
   {
-    std::string MacroName = MacroNameTok.getIdentifierInfo()->getName().str();
-    DirectiveStack.emplace_back();
-    if (MacroName == "SERVER")
+    std::string macro_name = MacroNameTok.getIdentifierInfo()->getName().str();
+    mDirectiveStack.emplace_back();
+    if (macro_name == "SERVER")
     {
-      DirectiveStack.back().Loc = Loc;
-      DirectiveStack.back().MacroEndLoc = MacroNameTok.getEndLoc();
-      DirectiveStack.back().isIfndef = true;
+      mDirectiveStack.back().mLoc = Loc;
+      mDirectiveStack.back().mMacroEndLoc = MacroNameTok.getEndLoc();
+      mDirectiveStack.back().mIsIfndef = true;
     }
   }
 
   void Else(SourceLocation Loc, SourceLocation IfLoc) override
   {
-    auto &current = DirectiveStack.back();
-    if (current.Loc.isValid() && !current.ElseLoc.isValid())
+    auto &current = mDirectiveStack.back();
+    if (current.mLoc.isValid() && !current.mElseLoc.isValid())
     {
-      current.ElseLoc = Loc;
+      current.mElseLoc = Loc;
     }
   }
 
   void Endif(SourceLocation Loc, SourceLocation IfLoc) override
   {
-    if (DirectiveStack.back().Loc.isValid())
+    if (mDirectiveStack.back().mLoc.isValid())
     { // if it's a SERVER macro
-      IfdefLocations.push_back({IfLoc, DirectiveStack.back().ElseLoc, Loc,
-                                DirectiveStack.back().MacroEndLoc, DirectiveStack.back().isIfndef});
+      mIfdefLocations.push_back({IfLoc, mDirectiveStack.back().mElseLoc, Loc,
+                                 mDirectiveStack.back().mMacroEndLoc,
+                                 mDirectiveStack.back().mIsIfndef});
     }
-    DirectiveStack.pop_back();
+    mDirectiveStack.pop_back();
   }
 
 private:
   struct DirectiveInfo
   {
-    SourceLocation Loc;
-    SourceLocation ElseLoc;
-    SourceLocation MacroEndLoc;
-    bool isIfndef = false;
+    SourceLocation mLoc;
+    SourceLocation mElseLoc;
+    SourceLocation mMacroEndLoc;
+    bool mIsIfndef = false;
   };
-  [[maybe_unused]] ClangTidyCheck &Check;
-  [[maybe_unused]] const SourceManager &SM;
-  std::vector<DirectiveInfo> DirectiveStack; // Tracks ifdef/ifndef locations and if they're SERVER
-  std::vector<IfdefLocation> &IfdefLocations;
+  [[maybe_unused]] ClangTidyCheck &mCheck;
+  [[maybe_unused]] const SourceManager &mSm;
+  std::vector<DirectiveInfo> mDirectiveStack; // Tracks ifdef/ifndef locations and if they're SERVER
+  std::vector<IfdefLocation> &mIfdefLocations;
 };
 
 class SoldatMatchCallback : public MatchFinder::MatchCallback
 {
 public:
   explicit SoldatMatchCallback(ClangTidyCheck &Check, std::vector<IfdefLocation> &IfdefLocations)
-    : Check(Check), IfdefLocations(IfdefLocations)
+    : mCheck(Check), mIfdefLocations(IfdefLocations)
   {
   }
 
   void run(const MatchFinder::MatchResult &Result) override
   {
-    if (const auto *MatchedDecl = Result.Nodes.getNodeAs<FunctionDecl>("function_with_ifdef"))
+    if (const auto *matched_decl = Result.Nodes.getNodeAs<FunctionDecl>("function_with_ifdef"))
     {
-      MatchedDecl->dump();
-      bool isTemplate =
-        MatchedDecl->getDescribedTemplate() != nullptr ||
-        MatchedDecl->getTemplateSpecializationInfo() != nullptr ||
-        MatchedDecl->getMemberSpecializationInfo() != nullptr ||
-        ((dyn_cast<CXXRecordDecl>(MatchedDecl->getParent()) != nullptr) &&
-         dyn_cast<CXXRecordDecl>(MatchedDecl->getParent())->getDescribedClassTemplate() != nullptr);
-      if (!isTemplate)
+      matched_decl->dump();
+      bool is_template =
+        matched_decl->getDescribedTemplate() != nullptr ||
+        matched_decl->getTemplateSpecializationInfo() != nullptr ||
+        matched_decl->getMemberSpecializationInfo() != nullptr ||
+        ((dyn_cast<CXXRecordDecl>(matched_decl->getParent()) != nullptr) &&
+         dyn_cast<CXXRecordDecl>(matched_decl->getParent())->getDescribedClassTemplate() != nullptr);
+      if (!is_template)
       {
-        std::string TemplatePrefix = "template<Config::Module M>\n";
-        Check.diag(MatchedDecl->getLocation(), "converting to template function")
-          << FixItHint::CreateInsertion(MatchedDecl->getBeginLoc(), TemplatePrefix);
+        std::string template_prefix = "template<Config::Module M>\n";
+        mCheck.diag(matched_decl->getLocation(), "converting to template function")
+          << FixItHint::CreateInsertion(matched_decl->getBeginLoc(), template_prefix);
       }
-      for (const auto &Ifdef : IfdefLocations)
+      for (const auto &ifdef : mIfdefLocations)
       {
-        if (!MatchedDecl->getSourceRange().fullyContains(SourceRange(Ifdef.Start, Ifdef.End)))
+        if (!matched_decl->getSourceRange().fullyContains(SourceRange(ifdef.mStart, ifdef.mEnd)))
         {
           continue;
         }
-        if (Ifdef.isIfndef)
+        if (ifdef.mIsIfndef)
         {
-          std::string ReplacementText = "if constexpr (!Config::IsServer(M)) {";
-          Check.diag(Ifdef.Start, "replacing #ifndef with if constexpr")
-            << FixItHint::CreateReplacement(SourceRange(GetHashLoc(Ifdef.Start), Ifdef.MacroEnd),
-                                            ReplacementText);
+          std::string replacement_text = "if constexpr (!Config::IsServer(M)) {";
+          mCheck.diag(ifdef.mStart, "replacing #ifndef with if constexpr")
+            << FixItHint::CreateReplacement(SourceRange(GetHashLoc(ifdef.mStart), ifdef.mMacroEnd),
+                                            replacement_text);
         }
         else
         {
-          std::string ReplacementText = "if constexpr (Config::IsServer(M)) {";
-          Check.diag(Ifdef.Start, "replacing #ifdef with if constexpr")
-            << FixItHint::CreateReplacement(SourceRange(GetHashLoc(Ifdef.Start), Ifdef.MacroEnd),
-                                            ReplacementText);
+          std::string replacement_text = "if constexpr (Config::IsServer(M)) {";
+          mCheck.diag(ifdef.mStart, "replacing #ifdef with if constexpr")
+            << FixItHint::CreateReplacement(SourceRange(GetHashLoc(ifdef.mStart), ifdef.mMacroEnd),
+                                            replacement_text);
         }
-        if (Ifdef.Else.isValid())
+        if (ifdef.mElse.isValid())
         {
-          Check.diag(Ifdef.Else, "replacing #else with } else {") << FixItHint::CreateReplacement(
-            SourceRange(GetHashLoc(Ifdef.Else), Ifdef.Else), "} else {");
+          mCheck.diag(ifdef.mElse, "replacing #else with } else {") << FixItHint::CreateReplacement(
+            SourceRange(GetHashLoc(ifdef.mElse), ifdef.mElse), "} else {");
         }
 
-        Check.diag(Ifdef.End, "replacing #endif with closing brace")
-          << FixItHint::CreateReplacement(SourceRange(GetHashLoc(Ifdef.End), Ifdef.End), "}");
+        mCheck.diag(ifdef.mEnd, "replacing #endif with closing brace")
+          << FixItHint::CreateReplacement(SourceRange(GetHashLoc(ifdef.mEnd), ifdef.mEnd), "}");
       }
     }
   }
 
 private:
-  ClangTidyCheck &Check;
-  std::vector<IfdefLocation> &IfdefLocations;
+  ClangTidyCheck &mCheck;
+  std::vector<IfdefLocation> &mIfdefLocations;
 };
 
 class SoldatIfdefReplacer : public ClangTidyCheck
 {
 public:
   SoldatIfdefReplacer(StringRef Name, ClangTidyContext *Context)
-    : ClangTidyCheck(Name, Context), Callback(*this, IfdefLocations)
+    : ClangTidyCheck(Name, Context), mCallback(*this, mIfdefLocations)
   {
   }
 
   void registerPPCallbacks(const SourceManager &SM, Preprocessor *PP,
                            Preprocessor *ModuleExpanderPP) override
   {
-    PP->addPPCallbacks(std::make_unique<IfdefPPCallbacks>(*this, SM, IfdefLocations));
+    PP->addPPCallbacks(std::make_unique<IfdefPPCallbacks>(*this, SM, mIfdefLocations));
   }
 
   void registerMatchers(MatchFinder *Finder) override
   {
-    auto HasIfdefMatcher =
-      functionDecl(hasIfdefs(IfdefPasser{IfdefLocations})).bind("function_with_ifdef");
+    auto has_ifdef_matcher =
+      functionDecl(hasIfdefs(IfdefPasser{mIfdefLocations})).bind("function_with_ifdef");
 
-    Finder->addMatcher(HasIfdefMatcher, &Callback);
+    Finder->addMatcher(has_ifdef_matcher, &mCallback);
   }
 
 private:
-  SoldatMatchCallback Callback;
-  std::vector<IfdefLocation> IfdefLocations;
+  SoldatMatchCallback mCallback;
+  std::vector<IfdefLocation> mIfdefLocations;
 };
 
 namespace
@@ -231,11 +232,11 @@ namespace clang::tidy
 {
 
 // Register the module using this statically initialized variable.
-static ClangTidyModuleRegistry::Add<::SoldatIfdefReplacerModule> soldatIfdefReplacerInit(
+static ClangTidyModuleRegistry::Add<::SoldatIfdefReplacerModule> gSoldatIfdefReplacerInit(
   "soldat-ifdef-replacer-module", "Adds 'soldat-ifdef-replacer' checks.");
 
 // This anchor is used to force the linker to link in the generated object file and thus register
 // the module.
-volatile int awesomePrefixCheckAnchorSource = 0;
+volatile int gAwesomePrefixCheckAnchorSource = 0;
 
 } // namespace clang::tidy
