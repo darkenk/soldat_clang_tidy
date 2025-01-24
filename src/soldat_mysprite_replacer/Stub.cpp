@@ -27,5 +27,9 @@ int main_test()
 
     auto& system = TSpriteSystem::Get();
     system.GetSprite(mysprite);
+
+    int mysprite = 12;
+    system.GetSprite(mysprite);
+
     return {};
 }
