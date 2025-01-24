@@ -20,13 +20,13 @@ namespace {
 class MySpriteReplacer : public TransformerClangTidyCheck {
     static auto rule() {
         // Match calls to GetSprite(mysprite).
-        auto MySpriteMatcher = cxxMemberCallExpr(
+        auto MySpriteMatcher = traverse(TraversalKind::TK_IgnoreUnlessSpelledInSource, cxxMemberCallExpr(
             on(expr(hasType(namedDecl(hasName("TSpriteSystem"))))),
             callee(functionDecl(hasName("GetSprite"))),
             callee(memberExpr().bind("func_call")),
             argumentCountIs(1),
-            hasArgument(0, declRefExpr(to(varDecl(hasName("mysprite"), hasGlobalStorage(), hasType(isInteger())))))
-        ).bind("callGetSprite");
+            hasArgument(0, declRefExpr(to(varDecl(hasName("mysprite"), hasGlobalStorage(), hasType(isUnsignedInteger())))))
+        )).bind("callGetSprite");
 
         // Rewrite call GetSprite(mysprite) to GetMySprite().
         return makeRule(MySpriteMatcher,

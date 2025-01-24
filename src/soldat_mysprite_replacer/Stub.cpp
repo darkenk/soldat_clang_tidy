@@ -1,5 +1,11 @@
-int mysprite = 0;
+#include <cstdint>
+extern std::uint8_t mysprite;
 
+class Sprite {
+
+};
+
+template <class TSprite>
 class TSpriteSystem
 {   
 public:
@@ -22,10 +28,10 @@ public:
 
 int main_test()
 {
-    TSpriteSystem::Get().GetSprite(mysprite);
-    TSpriteSystem::Get().GetSprite(12);
+    TSpriteSystem<Sprite>::Get().GetSprite(mysprite);
+    TSpriteSystem<Sprite>::Get().GetSprite(12);
 
-    auto& system = TSpriteSystem::Get();
+    auto& system = TSpriteSystem<Sprite>::Get();
     system.GetSprite(mysprite);
 
     int mysprite = 12;
