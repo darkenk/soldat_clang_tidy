@@ -1,20 +1,27 @@
 {
 	"CMake Template": {
-	  "prefix": "cmake",
+	  "prefix": "create_clang_tidy_test",
 	  "isFileTemplate": true,
+	  "scope": "cmake",
 	  "body": [
 		"include(\\${CMAKE_CURRENT_LIST_DIR\\}/../../cmake/clang_tidy.cmake)",
 		"",
-		"add_library(${1:plugin_name} MODULE \"\")",
-		"target_compile_options(${1:lib_name} PRIVATE -fno-rtti)",
-		"target_include_directories($1",
+		"add_library(${TM_DIRECTORY/(.*[\\/])*(.*)/${2:/pascalcase}/} MODULE \"\")",
+		"target_compile_options(${TM_DIRECTORY/(.*[\\/])*(.*)/${2:/pascalcase}/} PRIVATE -fno-rtti)",
+		"target_include_directories(${TM_DIRECTORY/(.*[\\/])*(.*)/${2:/pascalcase}/}",
     	"    PRIVATE",
         "        \\${CLANG_INCLUDE_DIRS\\}",
         "        \\${LLVM_INCLUDE_DIRS\\}",
 		")",
-		"target_sources($1 PRIVATE \\${CMAKE_CURRENT_LIST_DIR\\}/${2:cpp_file})",
+		"target_sources(${TM_DIRECTORY/(.*[\\/])*(.*)/${2:/pascalcase}/}",
+		"    PRIVATE",
+		"        \\${CMAKE_CURRENT_LIST_DIR\\}/${TM_DIRECTORY/(.*[\\/])*(.*)/$2/}.cpp",
+		")",
 		"",
-		"create_clang_tidy_test($1 ${3:clang-tidy-rule} \\${CMAKE_CURRENT_LIST_DIR\\}/Stub.cpp)"
+		"create_clang_tidy_test(${TM_DIRECTORY/(.*[\\/])*(.*)/${2:/pascalcase}/}",
+		"    ${TM_DIRECTORY/.*\\/(.*)/${1}/}",
+		"    \\${CMAKE_CURRENT_LIST_DIR\\}/stub_${TM_DIRECTORY/(.*[\\/])*(.*)/$2/}.cpp",
+		")"
 	  ],
 	  "description": "Create a CMake file for a clang-tidy test"
 	}

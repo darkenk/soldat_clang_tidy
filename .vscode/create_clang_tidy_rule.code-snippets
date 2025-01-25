@@ -1,6 +1,6 @@
 {
 	"Create Clang-Tidy Transformer Skeleton": {
-	  "prefix": "clangTidyRule",
+	  "prefix": "clang_tidy_transformer",
 	  "description": "Create a clang-tidy transformer skeleton",
 	  "isFileTemplate": true,
 	  "scope": "cpp",
@@ -24,7 +24,7 @@
 		"",
 		"namespace {",
 		"",
-		"class ${1:Matcher name} : public TransformerClangTidyCheck {",
+		"class ${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/} : public TransformerClangTidyCheck {",
 		"    static auto rule() {",
 		"        auto matcher = traverse(TraversalKind::TK_IgnoreUnlessSpelledInSource,",
 		"            cxxMemberCallExpr()",
@@ -37,22 +37,22 @@
 		"    }",
 		"",
 		"public:",
-		"  ${1}(StringRef Name, ClangTidyContext *Context)",
+		"  ${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}(StringRef Name, ClangTidyContext *Context)",
 		"      : TransformerClangTidyCheck(rule(), Name, Context) {}",
 		"};",
 		"",
-		"class ${1}Module : public ClangTidyModule {",
+		"class ${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}Module : public ClangTidyModule {",
 		"public:",
 		"  void addCheckFactories(ClangTidyCheckFactories &Factories) override {",
-		"    Factories.registerCheck<${1}>(\"${2:clang-tidy-rule-name}\");",
+		"    Factories.registerCheck<${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}>(\"${TM_FILENAME_BASE/[_]/-/g}\");",
 		"  }",
 		"};",
 		"",
 		"} // end anonymous namespace",
 		"",
 		"// Register the module using this statically initialized variable",
-		"static ClangTidyModuleRegistry::Add<${1}Module>",
-		"    X(\"${2}\", \"Adds the mysprite replacer check.\");"
+		"static ClangTidyModuleRegistry::Add<${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}Module>",
+		"    X(\"${TM_FILENAME_BASE/[_]/-/g}\", \"Adds the new replacer check.\");"
 	  ]
 	}
   }
