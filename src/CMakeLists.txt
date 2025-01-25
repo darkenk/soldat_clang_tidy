@@ -1,2 +1,3 @@
 add_subdirectory(soldat_ifdef_replacer)
 add_subdirectory(soldat_mysprite_replacer)
+add_subdirectory(soldat_mysprite_is_valid_replacer)
