@@ -30,9 +30,9 @@ class MySpriteReplacer : public TransformerClangTidyCheck {
 
         // Rewrite call GetSprite(mysprite) to GetMySprite().
         return makeRule(MySpriteMatcher,
-                        {change(member("func_call"), cat("GetMySprite")), 
+                        {change(member("func_call"), cat("GetPlayerSprite")), 
                          change(callArgs("callGetSprite"), cat(""))},
-                        cat("Replace GetSprite(mysprite) with GetMySprite()."));
+                        cat("Replace GetSprite(mysprite) with GetPlayerSprite()."));
     }
 
 public:
