@@ -29,6 +29,9 @@ class SoldatMySpriteIsValidReplacer : public TransformerClangTidyCheck {
         auto matcher_equal = traverse(TraversalKind::TK_IgnoreUnlessSpelledInSource,
             binaryOperator(hasLHS(mysprite_expr), hasOperatorName("=="), hasRHS(integerLiteral(equals(0)))).bind("invalid_player")
         );
+        auto matcher_not_equal = traverse(TraversalKind::TK_IgnoreUnlessSpelledInSource,
+            binaryOperator(hasLHS(mysprite_expr), hasOperatorName("!="), hasRHS(integerLiteral(equals(0)))).bind("valid_player")
+        );
         auto r = applyFirst({
             makeRule(matcher_less,
                 {change(node("invalid_player"), cat("!SpriteSystem::Get().IsPlayerSpriteValid()"))},
@@ -41,7 +44,11 @@ class SoldatMySpriteIsValidReplacer : public TransformerClangTidyCheck {
             makeRule(matcher_equal,
                 {change(node("invalid_player"), cat("!SpriteSystem::Get().IsPlayerSpriteValid()"))},
                 cat("replace", node("invalid_player"), " with !SpriteSystem::Get().IsPlayerSpriteValid()")
-            )
+            ),
+            makeRule(matcher_not_equal,
+                {change(node("valid_player"), cat("SpriteSystem::Get().IsPlayerSpriteValid()"))},
+                cat("replace", node("valid_player"), " with SpriteSystem::Get().IsPlayerSpriteValid()")
+            ),
         });
         addInclude(r, "shared/mechanics/SpriteSystem.hpp");
         return r;

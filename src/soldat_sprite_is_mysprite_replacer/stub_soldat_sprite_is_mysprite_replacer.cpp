@@ -4,8 +4,22 @@ extern std::uint8_t mysprite;
 
 struct Test
 {
-    std::uint8_t someone = 2; 
+    const std::uint8_t someone = 2;
+
+    void test_method()
+    {
+        if (this->someone != mysprite) {}
+        if (this->someone == mysprite) {}
+    }
+
+    void test_method2();
 };
+
+void Test::test_method2()
+{
+    if (this->someone == mysprite) {}
+    if (this->someone != mysprite) {}
+}
 
 
 int test_main()
