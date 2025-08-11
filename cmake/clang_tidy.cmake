@@ -1,4 +1,9 @@
 function(create_clang_tidy_test TARGET_NAME CHECK_NAME SOURCE_FILE)
+    set(options)
+    set(oneValueArgs)
+    set(multiValueArgs HEADERS)
+    cmake_parse_arguments(TEST "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
     set(TEST_LOCATION ${CMAKE_BINARY_DIR}/${TARGET_NAME}_Test)
     set(TEST_PLUGIN $<TARGET_FILE:${TARGET_NAME}>)
 
@@ -10,16 +15,25 @@ function(create_clang_tidy_test TARGET_NAME CHECK_NAME SOURCE_FILE)
         "target_compile_options(${TARGET_NAME}_StubTest PRIVATE -Wno-all -Wno-error)\n"
     )
 
+    set(COPY_HEADERS_COMMANDS "")
+    foreach(header ${TEST_HEADERS})
+        list(APPEND COPY_HEADERS_COMMANDS
+            COMMAND ${CMAKE_COMMAND} -E copy ${header} ${TEST_LOCATION}/
+        )
+    endforeach()
+
     add_custom_target(${TARGET_NAME}_Test
         COMMAND ${CMAKE_COMMAND} -E copy ${SOURCE_FILE} ${TEST_LOCATION}/Stub.cpp
+        ${COPY_HEADERS_COMMANDS}
         COMMAND ${CMAKE_COMMAND} -B ${TEST_LOCATION}/build -S ${TEST_LOCATION} -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-        COMMAND clang-tidy --fix --format-style=file --checks="-*,${CHECK_NAME}" --load=${TEST_PLUGIN} -p ${TEST_LOCATION}/build ${TEST_LOCATION}/Stub.cpp
+        COMMAND clang-tidy --fix --format-style=file --header-filter=.* --checks="-*,${CHECK_NAME}" --load=${TEST_PLUGIN} -p ${TEST_LOCATION}/build ${TEST_LOCATION}/Stub.cpp
         #COMMAND diff ${TEST_LOCATION}/Stub.cpp ${SOURCE_FILE}
         DEPENDS ${TARGET_NAME}
     )
 
     add_custom_target(${TARGET_NAME}_DumpAst
         COMMAND ${CMAKE_COMMAND} -E copy ${SOURCE_FILE} ${TEST_LOCATION}/Stub.cpp
+        ${COPY_HEADERS_COMMANDS}
         COMMAND ${CMAKE_COMMAND} -B ${TEST_LOCATION}/build -S ${TEST_LOCATION} -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
         COMMAND clang -Xclang -ast-dump -fsyntax-only -c ${TEST_LOCATION}/Stub.cpp
         DEPENDS ${TARGET_NAME}
