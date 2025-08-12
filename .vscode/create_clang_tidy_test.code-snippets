@@ -13,6 +13,7 @@
         "        \\${CLANG_INCLUDE_DIRS\\}",
         "        \\${LLVM_INCLUDE_DIRS\\}",
 		")",
+		"target_precompile_headers(${TM_DIRECTORY/(.*[\\/])*(.*)/${2:/pascalcase}/} PRIVATE pch.hpp)",
 		"target_sources(${TM_DIRECTORY/(.*[\\/])*(.*)/${2:/pascalcase}/}",
 		"    PRIVATE",
 		"        \\${CMAKE_CURRENT_LIST_DIR\\}/${TM_DIRECTORY/(.*[\\/])*(.*)/$2/}.cpp",

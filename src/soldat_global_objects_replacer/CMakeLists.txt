@@ -7,6 +7,7 @@ target_include_directories(SoldatGlobalObjectsReplacer
         ${CLANG_INCLUDE_DIRS}
         ${LLVM_INCLUDE_DIRS}
 )
+target_precompile_headers(SoldatGlobalObjectsReplacer PRIVATE pch.hpp)
 target_sources(SoldatGlobalObjectsReplacer
     PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/soldat_global_objects_replacer.cpp
