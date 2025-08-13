@@ -16,4 +16,6 @@ target_sources(SoldatGlobalFunctionsToMemberFunctions
 create_clang_tidy_test(SoldatGlobalFunctionsToMemberFunctions
     soldat-global-functions-to-member-functions
     ${CMAKE_CURRENT_LIST_DIR}/stub_soldat_global_functions_to_member_functions.cpp
+    HEADERS
+        ${CMAKE_CURRENT_LIST_DIR}/Stub.hpp
 )
