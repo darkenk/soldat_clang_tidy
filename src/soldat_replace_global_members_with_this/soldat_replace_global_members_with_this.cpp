@@ -8,17 +8,49 @@ using namespace clang::tidy::utils;
 
 namespace {
 
+RangeSelector declWithDot(std::string BeginID)
+{
+    return [=](const ast_matchers::MatchFinder::MatchResult &Result) {
+        const auto *Var = Result.Nodes.getNodeAs<DeclRefExpr>(BeginID);
+
+        auto &SM = *Result.SourceManager;
+        const LangOptions &LangOpts = Result.Context->getLangOpts();
+
+        auto Begin = Var->getBeginLoc();
+        auto End = Var->getEndLoc();
+
+        End = Lexer::getLocForEndOfToken(End, 0, SM, LangOpts);
+        return CharSourceRange::getTokenRange(Begin, End);
+    };
+}
+
 class SoldatReplaceGlobalMembersWithThis : public TransformerClangTidyCheck {
     static auto rule() {
         // clang-format off
         auto matcher = traverse(TraversalKind::TK_IgnoreUnlessSpelledInSource,
-            cxxMemberCallExpr()
-        ).bind("bind_whole_expr");
+            memberExpr(
+              unless(member(cxxMethodDecl())),
+              hasObjectExpression(
+                  declRefExpr(
+                      to(varDecl(
+                          hasGlobalStorage(),
+                          matchesName("gGlobalState.*"),
+                          hasType(cxxRecordDecl().bind("class"))
+                      ))
+                  ).bind("global_var")
+              ),
+              hasAncestor(
+                  cxxMethodDecl(ofClass(
+                      recordDecl(equalsBoundNode("class"))
+                  ))
+              )
+          )
+        );
         // clang-format on
 
         return makeRule(matcher,
-            {change(node("bind_whole_expr"), cat("SampleReplacement"))},
-            cat("Describe what has changed")
+            { remove(declWithDot("global_var")) },
+            cat("Remove call on global object")
         );
     }
 
