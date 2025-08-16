@@ -23,7 +23,7 @@ void function();
 
 void nice_function()
 {
-
+  static int static_var = 9;
 }
 
 void another_function()

@@ -32,6 +32,7 @@ class SoldatMoveGlobalVariablesToPrivateMembers : public TransformerClangTidyChe
             isExpansionInMainFile(),
             hasTypeLoc(typeLoc().bind("var_type")),
             hasGlobalStorage(),
+            unless(isStaticLocal()),
             optionally(hasInitializer(expr().bind("initializer")))
           ).bind("global_var")
         );

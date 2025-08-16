@@ -52,6 +52,8 @@ class SoldatMoveGlobalFunctionsToPrivateMethods : public TransformerClangTidyChe
             unless(cxxMethodDecl()),
             unless(hasName("main")),
             isDefinition(),
+            unless(isInline()),
+            unless(isConstexpr()),
             isExpansionInMainFile(),
             has(compoundStmt().bind("function_body"))
           ).bind("global_function")
