@@ -10,3 +10,13 @@ set print-matcher true
 enable output     dump
 
 ```
+
+
+## Stencil
+
+`clang/Tooling/Transformer/Stencil.h` <- contains various functions help to create rewrite.
+Some useful ones:
+* node
+* name
+* ifBound
+* access
